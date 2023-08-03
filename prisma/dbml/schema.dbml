@@ -10,8 +10,138 @@ Table User {
   password String [not null]
   firstname String
   lastname String
+  role Role [not null, default: 'GUEST']
+  phone String
+  sex Sex [not null, default: 'MALE']
+  birthdate DateTime
+  systemLanguage Language [not null, default: 'RUSSIAN']
+  company Company
+  companyId String
   posts Post [not null]
-  role Role [not null]
+  studentInfo Student
+  teacherInfo Teacher
+  cash Float [not null]
+  payments Payment [not null]
+  paymentCalculationSetting PaymentCalculationSetting [not null]
+  histories History [not null]
+}
+
+Table Student {
+  user User [not null]
+  userId String [pk]
+  lesson Lesson [not null]
+  enrollment Enrollment [not null]
+}
+
+Table Teacher {
+  user User [not null]
+  userId String [pk]
+  groups Group [not null]
+  lessons Lesson [not null]
+}
+
+Table PaymentCalculationSetting {
+  id String [pk]
+  user User [not null]
+  userId String [not null]
+  course Course
+  courseId String
+  paymentStrategy PaymentStrategy [not null]
+  amount Float [not null]
+  payments Payment [not null]
+}
+
+Table Payment {
+  id String [pk]
+  user User [not null]
+  userId String [not null]
+  amount Float [not null]
+  details String
+  paymentType PaymentType [not null]
+  paymentCalculationSetting PaymentCalculationSetting
+  paymentCalculationSettingId String
+}
+
+Table Company {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  title String [not null]
+  logo String [not null]
+  schools School [not null]
+  users User [not null]
+}
+
+Table School {
+  id String [pk]
+  company Company [not null]
+  companyId String [not null]
+  rooms Room [not null]
+  deposit Float [not null]
+}
+
+Table Room {
+  id String [pk]
+  title String [not null]
+  school School [not null]
+  schoolId String [not null]
+  groups Group [not null]
+}
+
+Table Course {
+  id String [pk]
+  title String [not null]
+  duration Int [not null]
+  price Float [not null]
+  groups Group [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  paymentCalculationSettings PaymentCalculationSetting [not null]
+}
+
+Table Group {
+  id String [pk]
+  startTime DateTime [not null]
+  endTime DateTime
+  course Course [not null]
+  courseId String [not null]
+  days Day[] [not null]
+  room Room [not null]
+  roomId String [not null]
+  teacher Teacher [not null]
+  teacherId String [not null]
+  lessons Lesson [not null]
+  enrollment Enrollment [not null]
+}
+
+Table Enrollment {
+  id String [pk]
+  student Student [not null]
+  studentId String [not null]
+  group Group [not null]
+  groupId String [not null]
+  enrolledAt DateTime [not null]
+  leftAt DateTime
+}
+
+Table Lesson {
+  id String [pk]
+  startTime DateTime [not null]
+  endTime DateTime [not null]
+  group Group [not null]
+  groupId String [not null]
+  teacher Teacher [not null]
+  teacherId String [not null]
+  participants Student [not null]
+}
+
+Table History {
+  id String [pk]
+  status HistoryStatus [not null, default: 'INFO']
+  userIds User [not null]
+  entity HistoryEntity [not null]
+  message String [not null]
+  createdAt DateTime [default: `now()`, not null]
 }
 
 Table Post {
@@ -27,7 +157,101 @@ Table Post {
 
 Enum Role {
   ADMIN
+  GUEST
   USER
+  STUDENT
+  TEACHER
+  DIRECTOR
+  ADMINISTRATOR
 }
+
+Enum Sex {
+  MALE
+  FEMALE
+}
+
+Enum Day {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+Enum PaymentStrategy {
+  LESSON
+  STUDENT
+  COURSE
+  MONTH
+  DAY
+  HOUR
+}
+
+Enum PaymentType {
+  INCOME
+  OUTCOME
+}
+
+Enum Language {
+  RUSSIAN
+  UZBEK
+  ENGLISH
+}
+
+Enum HistoryStatus {
+  WARNING
+  ERROR
+  INFO
+}
+
+Enum HistoryEntity {
+  USER
+  TEACHER
+  STUDENT
+  PAYMENT
+  PAYMENTSTRATEGY
+  PAYMENTCALCULATIONSETTING
+  LESSON
+  COURSE
+  SCHOOL
+  COMPANY
+  ENROLLMENT
+  ROOM
+  GROUP
+}
+
+Ref: User.companyId > Company.id
+
+Ref: Student.userId - User.id
+
+Ref: Teacher.userId - User.id
+
+Ref: PaymentCalculationSetting.userId > User.id
+
+Ref: PaymentCalculationSetting.courseId > Course.id
+
+Ref: Payment.userId > User.id
+
+Ref: Payment.paymentCalculationSettingId > PaymentCalculationSetting.id
+
+Ref: School.companyId > Company.id
+
+Ref: Room.schoolId > School.id
+
+Ref: Group.courseId > Course.id
+
+Ref: Group.roomId > Room.id
+
+Ref: Group.teacherId > Teacher.userId
+
+Ref: Enrollment.studentId > Student.userId
+
+Ref: Enrollment.groupId > Group.id
+
+Ref: Lesson.groupId > Group.id
+
+Ref: Lesson.teacherId > Teacher.userId
 
 Ref: Post.authorId > User.id

@@ -16,6 +16,24 @@ input ChangePasswordInput {
   oldPassword: String!
 }
 
+type Company {
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  id: ID!
+  logo: String!
+  title: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+  users: [User!]!
+}
+
+input CreateCompanyInput {
+  logo: String!
+  title: String!
+  userIds: [String!]
+}
+
 input CreatePostInput {
   content: String!
   title: String!
@@ -38,10 +56,12 @@ input LoginInput {
 
 type Mutation {
   changePassword(data: ChangePasswordInput!): User!
+  createCompany(data: CreateCompanyInput!): Company!
   createPost(data: CreatePostInput!): Post!
   login(data: LoginInput!): Auth!
   refreshToken(token: JWT!): Token!
   signup(data: SignupInput!): Auth!
+  updateCompany(companyId: String, data: UpdateCompanyInput!): Company!
   updateUser(data: UpdateUserInput!): User!
 }
 
@@ -101,6 +121,8 @@ enum PostOrderField {
 }
 
 type Query {
+  fetchCompanies: [Company!]!
+  fetchCompany(companyId: String): Company!
   hello(name: String!): String!
   helloWorld: String!
   me: User!
@@ -112,6 +134,11 @@ type Query {
 """User role"""
 enum Role {
   ADMIN
+  ADMINISTRATOR
+  DIRECTOR
+  GUEST
+  STUDENT
+  TEACHER
   USER
 }
 
@@ -134,12 +161,23 @@ type Token {
   refreshToken: JWT!
 }
 
+input UpdateCompanyInput {
+  addUserIds: [String!]
+  logo: String
+  removeUserIds: [String!]
+  title: String
+}
+
 input UpdateUserInput {
+  email: String
   firstname: String
   lastname: String
+  role: Role
 }
 
 type User {
+  company: Company!
+
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   email: String!

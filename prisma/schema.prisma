@@ -13,15 +13,145 @@ generator dbml {
 }
 
 model User {
+  id                        String                      @id @default(cuid())
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @updatedAt
+  email                     String                      @unique
+  password                  String
+  firstname                 String?
+  lastname                  String?
+  role                      Role                        @default(GUEST)
+  phone                     String?
+  sex                       Sex                         @default(MALE)
+  birthdate                 DateTime?
+  systemLanguage            Language                    @default(RUSSIAN)
+  company                   Company?                    @relation(fields: [companyId], references: [id])
+  companyId                 String?
+  posts                     Post[]
+  studentInfo               Student?
+  teacherInfo               Teacher?
+  cash                      Float
+  payments                  Payment[]
+  paymentCalculationSetting PaymentCalculationSetting[]
+  histories                 History[]
+}
+
+model Student {
+  user       User         @relation(fields: [userId], references: [id])
+  userId     String       @id
+  lesson     Lesson[]     @relation()
+  enrollment Enrollment[]
+}
+
+model Teacher {
+  user    User     @relation(fields: [userId], references: [id])
+  userId  String   @id
+  groups  Group[]  @relation("groupTeacher")
+  lessons Lesson[] @relation("lessonsTeacher")
+}
+
+model PaymentCalculationSetting {
+  id              String          @id @default(cuid())
+  user            User            @relation(fields: [userId], references: [id])
+  userId          String
+  course          Course?         @relation(fields: [courseId], references: [id])
+  courseId        String?
+  paymentStrategy PaymentStrategy
+  amount          Float
+  payments        Payment[]
+}
+
+model Payment {
+  id                          String                     @id @default(cuid())
+  user                        User                       @relation(fields: [userId], references: [id])
+  userId                      String
+  amount                      Float
+  details                     String?
+  paymentType                 PaymentType
+  paymentCalculationSetting   PaymentCalculationSetting? @relation(fields: [paymentCalculationSettingId], references: [id])
+  paymentCalculationSettingId String?
+}
+
+model Company {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  email     String   @unique
-  password  String
-  firstname String?
-  lastname  String?
-  posts     Post[]
-  role      Role
+  title     String
+  logo      String
+  schools   School[]
+  users     User[]
+}
+
+model School {
+  id        String  @id @default(cuid())
+  company   Company @relation(fields: [companyId], references: [id])
+  companyId String
+  rooms     Room[]
+  deposit   Float
+}
+
+model Room {
+  id       String  @id @default(cuid())
+  title    String
+  school   School  @relation(fields: [schoolId], references: [id])
+  schoolId String
+  groups   Group[]
+}
+
+model Course {
+  id                         String                      @id @default(cuid())
+  title                      String
+  duration                   Int
+  price                      Float
+  groups                     Group[]
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  paymentCalculationSettings PaymentCalculationSetting[]
+}
+
+model Group {
+  id         String       @id @default(cuid())
+  startTime  DateTime
+  endTime    DateTime?
+  course     Course       @relation(fields: [courseId], references: [id])
+  courseId   String
+  days       Day[]
+  room       Room         @relation(fields: [roomId], references: [id])
+  roomId     String
+  teacher    Teacher      @relation("groupTeacher", fields: [teacherId], references: [userId])
+  teacherId  String
+  lessons    Lesson[]
+  enrollment Enrollment[]
+}
+
+model Enrollment {
+  id         String    @id @default(cuid())
+  student    Student   @relation(fields: [studentId], references: [userId])
+  studentId  String
+  group      Group     @relation(fields: [groupId], references: [id])
+  groupId    String
+  enrolledAt DateTime
+  leftAt     DateTime?
+}
+
+model Lesson {
+  id           String    @id @default(cuid())
+  startTime    DateTime
+  endTime      DateTime
+  group        Group     @relation(fields: [groupId], references: [id])
+  groupId      String
+  teacher      Teacher   @relation("lessonsTeacher", fields: [teacherId], references: [userId])
+  teacherId    String
+  participants Student[]
+}
+
+model History {
+  id        String        @id @default(cuid())
+  status    HistoryStatus @default(INFO)
+  userIds   User[]
+  entity    HistoryEntity
+  message   String
+  createdAt DateTime      @default(now())
 }
 
 model Post {
@@ -37,5 +167,67 @@ model Post {
 
 enum Role {
   ADMIN
+  GUEST
   USER
+  STUDENT
+  TEACHER
+  DIRECTOR
+  ADMINISTRATOR
+}
+
+enum Sex {
+  MALE
+  FEMALE
+}
+
+enum Day {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum PaymentStrategy {
+  LESSON // For each lesson
+  STUDENT // For each student
+  COURSE // For each course
+  MONTH // Every month
+  DAY // Every day
+  HOUR // Every hour
+}
+
+enum PaymentType {
+  INCOME
+  OUTCOME
+}
+
+enum Language {
+  RUSSIAN
+  UZBEK
+  ENGLISH
+}
+
+enum HistoryStatus {
+  WARNING
+  ERROR
+  INFO
+}
+
+enum HistoryEntity {
+  USER
+  TEACHER
+  STUDENT
+  PAYMENT
+  PAYMENTSTRATEGY
+  PAYMENTCALCULATIONSETTING
+  LESSON
+  COURSE
+  SCHOOL
+  COMPANY
+  ENROLLMENT
+  ROOM
+  GROUP
 }

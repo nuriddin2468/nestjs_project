@@ -14,6 +14,7 @@ import { UsersService } from './users.service';
 import { User } from './models/user.model';
 import { ChangePasswordInput } from './dto/change-password.input';
 import { UpdateUserInput } from './dto/update-user.input';
+import { AdminGuard } from 'src/auth/admin.guard';
 
 @Resolver(() => User)
 @UseGuards(GqlAuthGuard)
@@ -28,7 +29,7 @@ export class UsersResolver {
     return user;
   }
 
-  @UseGuards(GqlAuthGuard)
+  @UseGuards(GqlAuthGuard, AdminGuard)
   @Mutation(() => User)
   async updateUser(
     @UserEntity() user: User,
@@ -37,7 +38,7 @@ export class UsersResolver {
     return this.usersService.updateUser(user.id, newUserData);
   }
 
-  @UseGuards(GqlAuthGuard)
+  @UseGuards(GqlAuthGuard, AdminGuard)
   @Mutation(() => User)
   async changePassword(
     @UserEntity() user: User,
@@ -48,6 +49,11 @@ export class UsersResolver {
       user.password,
       changePassword
     );
+  }
+
+  @ResolveField('company')
+  company(@Parent() user: User) {
+    return this.prisma.user.findUnique({ where: { id: user.id } }).company();
   }
 
   @ResolveField('posts')
