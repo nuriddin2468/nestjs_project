@@ -11,12 +11,13 @@ import { UseGuards } from '@nestjs/common';
 import { UserEntity } from 'src/common/decorators/user.decorator';
 import { GqlAuthGuard } from 'src/auth/gql-auth.guard';
 import { UsersService } from './users.service';
-import { User } from './models/user.model';
+import { User as UserModel } from './models/user.model';
 import { ChangePasswordInput } from './dto/change-password.input';
 import { UpdateUserInput } from './dto/update-user.input';
 import { AdminGuard } from 'src/auth/admin.guard';
+import { Role, User } from '@prisma/client';
 
-@Resolver(() => User)
+@Resolver(() => UserModel)
 @UseGuards(GqlAuthGuard)
 export class UsersResolver {
   constructor(
@@ -24,24 +25,53 @@ export class UsersResolver {
     private prisma: PrismaService
   ) {}
 
-  @Query(() => User)
-  async me(@UserEntity() user: User): Promise<User> {
+  @Query(() => UserModel)
+  async me(@UserEntity() user: UserModel): Promise<UserModel> {
     return user;
   }
 
+  @Query(() => [UserModel])
   @UseGuards(GqlAuthGuard, AdminGuard)
-  @Mutation(() => User)
+  async fetchUsers(@UserEntity() user: UserModel): Promise<User[]> {
+    if (user.role === Role.ADMIN) {
+      return this.prisma.user.findMany();
+    }
+    const res = await this.prisma.school.findUnique({
+      where: {
+        id: user.schoolId,
+      },
+      include: {
+        company: {
+          include: {
+            schools: {
+              include: {
+                users: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    const users: User[] = [];
+    res?.company.schools.forEach((school) => {
+      school.users.forEach((u) => users.push(u));
+    });
+    return users;
+  }
+
+  @Mutation(() => UserModel)
+  @UseGuards(GqlAuthGuard, AdminGuard)
   async updateUser(
-    @UserEntity() user: User,
+    @UserEntity() user: UserModel,
     @Args('data') newUserData: UpdateUserInput
   ) {
     return this.usersService.updateUser(user.id, newUserData);
   }
 
+  @Mutation(() => UserModel)
   @UseGuards(GqlAuthGuard, AdminGuard)
-  @Mutation(() => User)
   async changePassword(
-    @UserEntity() user: User,
+    @UserEntity() user: UserModel,
     @Args('data') changePassword: ChangePasswordInput
   ) {
     return this.usersService.changePassword(
@@ -52,12 +82,13 @@ export class UsersResolver {
   }
 
   @ResolveField('company')
-  company(@Parent() user: User) {
-    return this.prisma.user.findUnique({ where: { id: user.id } }).company();
+  async company(@Parent() user: UserModel) {
+    return this.usersService.getUserCompany(user.id);
   }
 
-  @ResolveField('posts')
-  posts(@Parent() author: User) {
-    return this.prisma.user.findUnique({ where: { id: author.id } }).posts();
+  @ResolveField('school')
+  async school(@Parent() user: UserModel) {
+    if (!user.schoolId) return null;
+    return this.prisma.school.findUnique({ where: { id: user?.schoolId } });
   }
 }

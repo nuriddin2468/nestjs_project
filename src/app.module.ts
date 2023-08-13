@@ -12,7 +12,10 @@ import config from 'src/common/configs/config';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { GqlConfigService } from './gql-config.service';
 import { CompanyModule } from './company/company.module';
-import { UserService } from './common/services/user/user.service';
+import { SchoolModule } from './school/school.module';
+import { StudentModule } from './student/student.module';
+import { APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from './common/guards/roles.guard';
 
 @Module({
   imports: [
@@ -39,8 +42,10 @@ import { UserService } from './common/services/user/user.service';
     UsersModule,
     PostsModule,
     CompanyModule,
+    SchoolModule,
+    StudentModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AppResolver, UserService],
+  providers: [AppService, AppResolver],
 })
 export class AppModule {}

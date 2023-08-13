@@ -1,6 +1,7 @@
 import { Field, ObjectType } from '@nestjs/graphql';
-import { User } from 'src/users/models/user.model';
 import { BaseModel } from 'src/common/models/base.model';
+import { School } from 'src/school/entities/school.entity';
+import { User } from 'src/users/models/user.model';
 
 @ObjectType()
 export class Company extends BaseModel {
@@ -11,5 +12,8 @@ export class Company extends BaseModel {
   logo: string;
 
   @Field(() => [User])
-  users: [User];
+  users: User[];
+
+  @Field(() => [School])
+  schools: School[];
 }

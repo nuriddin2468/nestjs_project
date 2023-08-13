@@ -7,7 +7,7 @@ import { SecurityConfig } from 'src/common/configs/config.interface';
 export class PasswordService {
   get bcryptSaltRounds(): string | number {
     const securityConfig = this.configService.get<SecurityConfig>('security');
-    const saltOrRounds = securityConfig.bcryptSaltOrRound;
+    const saltOrRounds = securityConfig?.bcryptSaltOrRound || '';
 
     return Number.isInteger(Number(saltOrRounds))
       ? Number(saltOrRounds)

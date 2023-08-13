@@ -13,21 +13,24 @@ import { UserEntity } from '../common/decorators/user.decorator';
 import { User } from '../users/models/user.model';
 import { CreateCompanyInput } from './dto/create-company.input';
 import { PrismaService } from 'nestjs-prisma';
-import { AdminGuard } from '../auth/admin.guard';
 import { Role } from '@prisma/client';
 import { UpdateCompanyInput } from './dto/update-company.input';
-import { UserService } from '../common/services/user/user.service';
+import { CompanyService } from './company.service';
+import { PaginationInput } from 'src/common/pagination/pagination.input';
+import { School } from 'src/school/entities/school.entity';
+import { Roles, RolesGuard } from 'src/common/guards/roles.guard';
 
-@UseGuards(GqlAuthGuard)
 @Resolver(() => Company)
+@UseGuards(GqlAuthGuard)
 export class CompanyResolver {
   constructor(
     private prisma: PrismaService,
-    private userService: UserService
+    private companyService: CompanyService
   ) {}
 
-  @UseGuards(AdminGuard)
   @Mutation(() => Company)
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
   createCompany(
     @UserEntity() user: User,
     @Args('data') data: CreateCompanyInput
@@ -36,30 +39,33 @@ export class CompanyResolver {
       data: {
         title: data.title,
         logo: data.logo,
-        users: { connect: data.userIds.map((res) => ({ id: res })) },
       },
     });
   }
 
-  @UseGuards(AdminGuard)
   @Query(() => [Company])
-  fetchCompanies() {
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
+  fetchCompanies(@UserEntity() user: User) {
     return this.prisma.company.findMany();
   }
 
   @Query(() => Company)
-  fetchCompany(
+  @Roles(Role.ADMIN, Role.DIRECTOR)
+  @UseGuards(RolesGuard)
+  async fetchCompany(
     @UserEntity() user: User,
     @Args('companyId', { type: () => String, nullable: true })
     companyId?: string
   ) {
     if (user.role === Role.ADMIN && !!companyId)
       return this.prisma.company.findUnique({ where: { id: companyId } });
-    if (!user.companyId) throw Error('User has no related company');
-    return this.prisma.company.findUnique({ where: { id: user.companyId } });
+    return this.companyService.fetchUserCompany(user);
   }
 
   @Mutation(() => Company)
+  @Roles(Role.ADMIN, Role.DIRECTOR)
+  @UseGuards(RolesGuard)
   async updateCompany(
     @UserEntity() user: User,
     @Args('data') data: UpdateCompanyInput,
@@ -72,19 +78,56 @@ export class CompanyResolver {
         data: data,
       });
     }
-    if (!user.companyId) throw Error('User has no related company');
-    await this.userService.isCompanyOwner(user, user.companyId);
+    const company = await this.companyService.fetchUserCompany(user);
+    if (!company) throw Error('User do not have any company');
     return this.prisma.company.update({
-      where: { id: user.companyId },
+      where: { id: company.id },
       data: data,
     });
   }
 
-  @UseGuards(AdminGuard)
+  @Mutation(() => Company)
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
+  async deleteCompany(
+    @Args('companyId', { type: () => String, nullable: true })
+    companyId: string
+  ) {
+    return this.prisma.company.delete({
+      where: { id: companyId },
+    });
+  }
+
+  @ResolveField('schools', () => [School])
+  @Roles(Role.ADMIN, Role.DIRECTOR)
+  @UseGuards(RolesGuard)
+  schools(@Parent() company: Company) {
+    return this.prisma.school.findMany({
+      where: {
+        companyId: company.id,
+      },
+    });
+  }
+
   @ResolveField('users', () => [User])
-  users(@Parent() company: Company) {
-    return this.prisma.company
-      .findUnique({ where: { id: company.id } })
-      .users();
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
+  users(
+    @Parent() company: Company,
+    @Args('pagination') pagination: PaginationInput
+  ) {
+    return this.prisma.user.findMany({
+      cursor: {
+        id: pagination.cursor,
+      },
+      take: pagination.take,
+      where: {
+        school: {
+          company: {
+            id: company.id,
+          },
+        },
+      },
+    });
   }
 }

@@ -15,22 +15,21 @@ Table User {
   sex Sex [not null, default: 'MALE']
   birthdate DateTime
   systemLanguage Language [not null, default: 'RUSSIAN']
-  company Company
-  companyId String
-  posts Post [not null]
+  school School
+  schoolId String
   studentInfo Student
   teacherInfo Teacher
   cash Float [not null]
   payments Payment [not null]
-  paymentCalculationSetting PaymentCalculationSetting [not null]
+  paymentCalculationSettings PaymentCalculationSetting [not null]
   histories History [not null]
 }
 
 Table Student {
   user User [not null]
   userId String [pk]
-  lesson Lesson [not null]
-  enrollment Enrollment [not null]
+  lessonParticipations Lesson [not null]
+  enrollments Enrollment [not null]
 }
 
 Table Teacher {
@@ -69,15 +68,16 @@ Table Company {
   title String [not null]
   logo String [not null]
   schools School [not null]
-  users User [not null]
 }
 
 Table School {
   id String [pk]
+  title String [not null]
   company Company [not null]
   companyId String [not null]
   rooms Room [not null]
-  deposit Float [not null]
+  deposit Float [not null, default: 0]
+  users User [not null]
 }
 
 Table Room {
@@ -142,17 +142,6 @@ Table History {
   entity HistoryEntity [not null]
   message String [not null]
   createdAt DateTime [default: `now()`, not null]
-}
-
-Table Post {
-  id String [pk]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  published Boolean [not null]
-  title String [not null]
-  content String
-  author User
-  authorId String
 }
 
 Enum Role {
@@ -222,7 +211,7 @@ Enum HistoryEntity {
   GROUP
 }
 
-Ref: User.companyId > Company.id
+Ref: User.schoolId > School.id
 
 Ref: Student.userId - User.id
 
@@ -253,5 +242,3 @@ Ref: Enrollment.groupId > Group.id
 Ref: Lesson.groupId > Group.id
 
 Ref: Lesson.teacherId > Teacher.userId
-
-Ref: Post.authorId > User.id

@@ -3,6 +3,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PasswordService } from 'src/auth/password.service';
 import { ChangePasswordInput } from './dto/change-password.input';
 import { UpdateUserInput } from './dto/update-user.input';
+import { Company } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -18,6 +19,20 @@ export class UsersService {
         id: userId,
       },
     });
+  }
+
+  async getUserCompany(userId: string): Promise<Company | null> {
+    const userData = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        school: {
+          include: {
+            company: true,
+          },
+        },
+      },
+    });
+    return userData?.school?.company || null;
   }
 
   async changePassword(

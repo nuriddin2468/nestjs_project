@@ -18,7 +18,7 @@ import { SecurityConfig } from 'src/common/configs/config.interface';
         return {
           secret: configService.get<string>('JWT_ACCESS_SECRET'),
           signOptions: {
-            expiresIn: securityConfig.expiresIn,
+            expiresIn: securityConfig?.expiresIn,
           },
         };
       },
@@ -32,6 +32,6 @@ import { SecurityConfig } from 'src/common/configs/config.interface';
     GqlAuthGuard,
     PasswordService,
   ],
-  exports: [GqlAuthGuard],
+  exports: [GqlAuthGuard, AuthService],
 })
 export class AuthModule {}

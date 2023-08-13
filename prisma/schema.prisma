@@ -13,34 +13,33 @@ generator dbml {
 }
 
 model User {
-  id                        String                      @id @default(cuid())
-  createdAt                 DateTime                    @default(now())
-  updatedAt                 DateTime                    @updatedAt
-  email                     String                      @unique
-  password                  String
-  firstname                 String?
-  lastname                  String?
-  role                      Role                        @default(GUEST)
-  phone                     String?
-  sex                       Sex                         @default(MALE)
-  birthdate                 DateTime?
-  systemLanguage            Language                    @default(RUSSIAN)
-  company                   Company?                    @relation(fields: [companyId], references: [id])
-  companyId                 String?
-  posts                     Post[]
-  studentInfo               Student?
-  teacherInfo               Teacher?
-  cash                      Float
-  payments                  Payment[]
-  paymentCalculationSetting PaymentCalculationSetting[]
-  histories                 History[]
+  id                         String                      @id @default(cuid())
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  email                      String                      @unique
+  password                   String
+  firstname                  String?
+  lastname                   String?
+  role                       Role                        @default(GUEST)
+  phone                      String?
+  sex                        Sex                         @default(MALE)
+  birthdate                  DateTime?
+  systemLanguage             Language                    @default(RUSSIAN)
+  school                     School?                     @relation(fields: [schoolId], references: [id])
+  schoolId                   String?
+  studentInfo                Student?
+  teacherInfo                Teacher?
+  cash                       Float
+  payments                   Payment[]
+  paymentCalculationSettings PaymentCalculationSetting[]
+  histories                  History[]
 }
 
 model Student {
-  user       User         @relation(fields: [userId], references: [id])
-  userId     String       @id
-  lesson     Lesson[]     @relation()
-  enrollment Enrollment[]
+  user        User         @relation(fields: [userId], references: [id])
+  userId      String       @id
+  lessonParticipations     Lesson[]     @relation()
+  enrollments Enrollment[]
 }
 
 model Teacher {
@@ -79,15 +78,16 @@ model Company {
   title     String
   logo      String
   schools   School[]
-  users     User[]
 }
 
 model School {
   id        String  @id @default(cuid())
+  title     String
   company   Company @relation(fields: [companyId], references: [id])
   companyId String
   rooms     Room[]
-  deposit   Float
+  deposit   Float   @default(0)
+  users     User[]
 }
 
 model Room {
@@ -152,17 +152,6 @@ model History {
   entity    HistoryEntity
   message   String
   createdAt DateTime      @default(now())
-}
-
-model Post {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  published Boolean
-  title     String
-  content   String?
-  author    User?    @relation(fields: [authorId], references: [id])
-  authorId  String?
 }
 
 enum Role {

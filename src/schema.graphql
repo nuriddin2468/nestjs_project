@@ -21,11 +21,12 @@ type Company {
   createdAt: DateTime!
   id: ID!
   logo: String!
+  schools: [School!]!
   title: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
-  users: [User!]!
+  users(pagination: PaginationInput!): [User!]!
 }
 
 input CreateCompanyInput {
@@ -37,6 +38,16 @@ input CreateCompanyInput {
 input CreatePostInput {
   content: String!
   title: String!
+}
+
+input CreateSchoolInput {
+  title: String!
+}
+
+input CreateStudentInput {
+  email: String!
+  password: String!
+  schoolId: String!
 }
 
 """
@@ -58,6 +69,9 @@ type Mutation {
   changePassword(data: ChangePasswordInput!): User!
   createCompany(data: CreateCompanyInput!): Company!
   createPost(data: CreatePostInput!): Post!
+  createSchool(companyId: String, data: CreateSchoolInput!): School!
+  createStudent(data: CreateStudentInput!): Student!
+  deleteCompany(companyId: String): Company!
   login(data: LoginInput!): Auth!
   refreshToken(token: JWT!): Token!
   signup(data: SignupInput!): Auth!
@@ -78,6 +92,11 @@ type PageInfo {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
   startCursor: String
+}
+
+input PaginationInput {
+  cursor: String
+  take: Int! = 10
 }
 
 type Post {
@@ -123,11 +142,14 @@ enum PostOrderField {
 type Query {
   fetchCompanies: [Company!]!
   fetchCompany(companyId: String): Company!
+  fetchStudents: [Student!]!
+  fetchUsers: [User!]!
   hello(name: String!): String!
   helloWorld: String!
   me: User!
   post(postId: String!): Post!
   publishedPosts(after: String, before: String, first: Int, last: Int, orderBy: PostOrder, query: String, skip: Int): PostConnection!
+  school(id: String!): School!
   userPosts(userId: String!): [Post!]!
 }
 
@@ -142,11 +164,21 @@ enum Role {
   USER
 }
 
+type School {
+  company: Company!
+  id: ID!
+  title: String!
+}
+
 input SignupInput {
   email: String!
   firstname: String
   lastname: String
   password: String!
+}
+
+type Student {
+  userInfo: User!
 }
 
 type Subscription {
@@ -176,7 +208,7 @@ input UpdateUserInput {
 }
 
 type User {
-  company: Company!
+  company: Company
 
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
@@ -184,8 +216,9 @@ type User {
   firstname: String
   id: ID!
   lastname: String
-  posts: [Post!]
   role: Role!
+  school: School
+  schoolId: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!

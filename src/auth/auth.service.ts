@@ -23,32 +23,60 @@ export class AuthService {
     private readonly configService: ConfigService
   ) {}
 
-  async createUser(payload: SignupInput): Promise<Token> {
+  async createUser(
+    payload: SignupInput,
+    role: Role = Role.USER
+  ): Promise<Token> {
     const hashedPassword = await this.passwordService.hashPassword(
       payload.password
     );
+    if (role === Role.STUDENT) {
+      const user = await this.prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            ...payload,
+            password: hashedPassword,
+            role,
+            cash: 0,
+          },
+        });
 
-    try {
-      const user = await this.prisma.user.create({
-        data: {
-          ...payload,
-          password: hashedPassword,
-          role: Role.USER,
-          cash: 0,
-        },
+        if (!user) throw Error('Oops, something went wrong');
+
+        await tx.student.create({
+          data: {
+            userId: user.id,
+          },
+        });
+
+        return user;
       });
-
       return this.generateTokens({
         userId: user.id,
       });
-    } catch (e) {
-      if (
-        e instanceof Prisma.PrismaClientKnownRequestError &&
-        e.code === 'P2002'
-      ) {
-        throw new ConflictException(`Email ${payload.email} already used.`);
+    } else {
+      try {
+        const user = await this.prisma.user.create({
+          data: {
+            ...payload,
+            password: hashedPassword,
+            role,
+            cash: 0,
+          },
+        });
+
+        return this.generateTokens({
+          userId: user.id,
+        });
+      } catch (e) {
+        if (
+          e instanceof Prisma.PrismaClientKnownRequestError &&
+          e.code === 'P2002'
+        ) {
+          throw new ConflictException(`Email ${payload.email} already used.`);
+        }
+        throw new Error(e);
       }
-      throw new Error(e);
     }
   }
 
@@ -73,12 +101,12 @@ export class AuthService {
     });
   }
 
-  validateUser(userId: string): Promise<User> {
+  validateUser(userId: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { id: userId } });
   }
 
-  getUserFromToken(token: string): Promise<User> {
-    const id = this.jwtService.decode(token)['userId'];
+  getUserFromToken(token: string): Promise<User | null> {
+    const id = this.jwtService.decode(token)?.['userId'];
     return this.prisma.user.findUnique({ where: { id } });
   }
 
@@ -97,7 +125,7 @@ export class AuthService {
     const securityConfig = this.configService.get<SecurityConfig>('security');
     return this.jwtService.sign(payload, {
       secret: this.configService.get('JWT_REFRESH_SECRET'),
-      expiresIn: securityConfig.refreshIn,
+      expiresIn: securityConfig?.refreshIn,
     });
   }
 

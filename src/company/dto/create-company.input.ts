@@ -11,5 +11,5 @@ export class CreateCompanyInput {
   logo: string;
 
   @Field(() => [String], { nullable: true })
-  userIds: string[];
+  userIds?: string[];
 }
