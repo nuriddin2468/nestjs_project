@@ -7,15 +7,12 @@ import { AppService } from './app.service';
 import { AppResolver } from './app.resolver';
 import { AuthModule } from 'src/auth/auth.module';
 import { UsersModule } from 'src/users/users.module';
-import { PostsModule } from 'src/posts/posts.module';
 import config from 'src/common/configs/config';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { GqlConfigService } from './gql-config.service';
 import { CompanyModule } from './company/company.module';
 import { SchoolModule } from './school/school.module';
 import { StudentModule } from './student/student.module';
-import { APP_GUARD } from '@nestjs/core';
-import { RolesGuard } from './common/guards/roles.guard';
 
 @Module({
   imports: [
@@ -37,10 +34,9 @@ import { RolesGuard } from './common/guards/roles.guard';
       driver: ApolloDriver,
       useClass: GqlConfigService,
     }),
-
+    // DataloaderModule,
     AuthModule,
     UsersModule,
-    PostsModule,
     CompanyModule,
     SchoolModule,
     StudentModule,

@@ -32,7 +32,7 @@ export class UsersResolver {
 
   @Query(() => [UserModel])
   @UseGuards(GqlAuthGuard, AdminGuard)
-  async fetchUsers(@UserEntity() user: UserModel): Promise<User[]> {
+  async usersConnection(@UserEntity() user: UserModel): Promise<User[]> {
     if (user.role === Role.ADMIN) {
       return this.prisma.user.findMany();
     }
@@ -70,7 +70,7 @@ export class UsersResolver {
 
   @Mutation(() => UserModel)
   @UseGuards(GqlAuthGuard, AdminGuard)
-  async changePassword(
+  async updatePassword(
     @UserEntity() user: UserModel,
     @Args('data') changePassword: ChangePasswordInput
   ) {
@@ -82,8 +82,8 @@ export class UsersResolver {
   }
 
   @ResolveField('company')
-  async company(@Parent() user: UserModel) {
-    return this.usersService.getUserCompany(user.id);
+  company(@Parent() user: UserModel) {
+    return this.prisma.company.findUnique({ where: { id: user.companyId } });
   }
 
   @ResolveField('school')

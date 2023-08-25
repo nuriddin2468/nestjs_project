@@ -31,6 +31,9 @@ export class User extends BaseModel {
   @Field(() => Role)
   role: Role;
 
+  @Field(() => String)
+  companyId: string;
+
   @Field(() => Company, { nullable: true })
   company?: Company;
 

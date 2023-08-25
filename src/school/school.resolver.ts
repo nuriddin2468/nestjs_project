@@ -1,4 +1,11 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  ResolveField,
+  Parent,
+} from '@nestjs/graphql';
 import { SchoolService } from './school.service';
 import { School } from './entities/school.entity';
 import { CreateSchoolInput } from './dto/create-school.input';
@@ -7,16 +14,17 @@ import { UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from 'src/auth/gql-auth.guard';
 import { UserEntity } from 'src/common/decorators/user.decorator';
 import { Role, User } from '@prisma/client';
-import { UsersService } from 'src/users/users.service';
 import { Roles, RolesGuard } from 'src/common/guards/roles.guard';
+import { SchoolPaginatedModel } from './entities/schoolPaginated.model';
+import { PaginationArgs } from 'src/common/pagination/pagination.args';
+import { Company } from 'src/company/models/company.model';
 
 @Resolver(() => School)
 @UseGuards(GqlAuthGuard)
 export class SchoolResolver {
   constructor(
     private readonly schoolService: SchoolService,
-    private prisma: PrismaService,
-    private usersService: UsersService
+    private prisma: PrismaService
   ) {}
 
   @Mutation(() => School)
@@ -28,61 +36,33 @@ export class SchoolResolver {
     @Args('companyId', { type: () => String, nullable: true })
     companyId: string
   ) {
-    if (user.role === Role.ADMIN && !companyId)
-      throw Error('You need to declare Company Id');
-    if (user.role === Role.ADMIN && companyId) {
-      return this.prisma.school.create({
-        data: {
-          title: data.title,
-          companyId,
-        },
-      });
-    }
-
-    const company = await this.usersService.getUserCompany(user.id);
-
-    if (!company) throw Error('User does not have company');
-
-    return this.prisma.school.create({
-      data: {
-        title: data.title,
-        companyId: company.id,
-      },
-    });
+    return this.schoolService.createOne(user, data, companyId);
   }
 
-  @Query(() => [School], { name: 'school' })
+  @Query(() => SchoolPaginatedModel)
   @Roles(Role.ADMIN, Role.DIRECTOR)
   @UseGuards(RolesGuard)
-  async findAll(@UserEntity() user: User) {
-    if (user.role === Role.ADMIN) {
-      return this.prisma.school.findMany();
-    }
-
-    const company = await this.usersService.getUserCompany(user.id);
-
-    if (!company) throw Error('User does not have company');
-    return this.prisma.school.findMany({
-      where: {
-        companyId: company.id,
-      },
-    });
+  async schoolsConnection(
+    @UserEntity() user: User,
+    @Args() pagination: PaginationArgs
+  ) {
+    return this.schoolService.findAll(user, pagination);
   }
 
   @Query(() => School, { name: 'school' })
-  findOne(@Args('id', { type: () => String }) id: string) {
-    return this.prisma.school.findUnique({ where: { id } });
+  school(
+    @UserEntity() user: User,
+    @Args('id', { type: () => String }) id: string
+  ) {
+    return this.schoolService.findOne(user, id);
   }
 
-  // @Mutation(() => School)
-  // updateSchool(
-  //   @Args('updateSchoolInput') updateSchoolInput: UpdateSchoolInput
-  // ) {
-  //   return this.schoolService.update(updateSchoolInput.id, updateSchoolInput);
-  // }
-
-  // @Mutation(() => School)
-  // removeSchool(@Args('id', { type: () => Int }) id: number) {
-  //   return this.schoolService.remove(id);
-  // }
+  @ResolveField('company', () => Company)
+  async company(@Parent() school: School) {
+    return this.prisma.company.findFirstOrThrow({
+      where: {
+        id: school.companyId,
+      },
+    });
+  }
 }

@@ -19,25 +19,33 @@ input ChangePasswordInput {
 type Company {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
+  director: User
   id: ID!
   logo: String!
-  schools: [School!]!
+  schoolsConnection(after: String, before: String, first: Int, last: Int, skip: Int): [School!]!
   title: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
-  users(pagination: PaginationInput!): [User!]!
+  usersConnection(after: String, before: String, first: Int, last: Int, skip: Int): [User!]!
+}
+
+type CompanyEdge {
+  cursor: String!
+  node: Company!
+}
+
+type CompanyPaginatedModel {
+  edges: [CompanyEdge!]
+  nodes: [Company!]
+  pageInfo: PageInfo!
+  totalCount: Int!
 }
 
 input CreateCompanyInput {
   logo: String!
   title: String!
   userIds: [String!]
-}
-
-input CreatePostInput {
-  content: String!
-  title: String!
 }
 
 input CreateSchoolInput {
@@ -66,25 +74,16 @@ input LoginInput {
 }
 
 type Mutation {
-  changePassword(data: ChangePasswordInput!): User!
   createCompany(data: CreateCompanyInput!): Company!
-  createPost(data: CreatePostInput!): Post!
   createSchool(companyId: String, data: CreateSchoolInput!): School!
-  createStudent(data: CreateStudentInput!): Student!
+  createStudent(companyId: String!, data: CreateStudentInput!): Student!
   deleteCompany(companyId: String): Company!
   login(data: LoginInput!): Auth!
   refreshToken(token: JWT!): Token!
   signup(data: SignupInput!): Auth!
   updateCompany(companyId: String, data: UpdateCompanyInput!): Company!
+  updatePassword(data: ChangePasswordInput!): User!
   updateUser(data: UpdateUserInput!): User!
-}
-
-"""
-Possible directions in which to order a list of items when provided an `orderBy` argument.
-"""
-enum OrderDirection {
-  asc
-  desc
 }
 
 type PageInfo {
@@ -94,63 +93,14 @@ type PageInfo {
   startCursor: String
 }
 
-input PaginationInput {
-  cursor: String
-  take: Int! = 10
-}
-
-type Post {
-  author: User
-  content: String
-
-  """Identifies the date and time when the object was created."""
-  createdAt: DateTime!
-  id: ID!
-  published: Boolean!
-  title: String!
-
-  """Identifies the date and time when the object was last updated."""
-  updatedAt: DateTime!
-}
-
-type PostConnection {
-  edges: [PostEdge!]
-  pageInfo: PageInfo!
-  totalCount: Int!
-}
-
-type PostEdge {
-  cursor: String!
-  node: Post!
-}
-
-input PostOrder {
-  direction: OrderDirection!
-  field: PostOrderField!
-}
-
-"""Properties by which post connections can be ordered."""
-enum PostOrderField {
-  content
-  createdAt
-  id
-  published
-  title
-  updatedAt
-}
-
 type Query {
-  fetchCompanies: [Company!]!
-  fetchCompany(companyId: String): Company!
-  fetchStudents: [Student!]!
-  fetchUsers: [User!]!
-  hello(name: String!): String!
-  helloWorld: String!
+  companiesConnection(after: String, before: String, first: Int, last: Int, query: String, skip: Int): CompanyPaginatedModel!
+  company(companyId: String): Company!
   me: User!
-  post(postId: String!): Post!
-  publishedPosts(after: String, before: String, first: Int, last: Int, orderBy: PostOrder, query: String, skip: Int): PostConnection!
   school(id: String!): School!
-  userPosts(userId: String!): [Post!]!
+  schoolsConnection(after: String, before: String, first: Int, last: Int, skip: Int): SchoolPaginatedModel!
+  studentsConnection(after: String, before: String, first: Int, last: Int, skip: Int): StudentPaginatedModel!
+  usersConnection: [User!]!
 }
 
 """User role"""
@@ -166,8 +116,21 @@ enum Role {
 
 type School {
   company: Company!
+  companyId: String!
   id: ID!
   title: String!
+}
+
+type SchoolEdge {
+  cursor: String!
+  node: School!
+}
+
+type SchoolPaginatedModel {
+  edges: [SchoolEdge!]
+  nodes: [School!]
+  pageInfo: PageInfo!
+  totalCount: Int!
 }
 
 input SignupInput {
@@ -181,8 +144,16 @@ type Student {
   userInfo: User!
 }
 
-type Subscription {
-  postCreated: Post!
+type StudentEdge {
+  cursor: String!
+  node: Student!
+}
+
+type StudentPaginatedModel {
+  edges: [StudentEdge!]
+  nodes: [Student!]
+  pageInfo: PageInfo!
+  totalCount: Int!
 }
 
 type Token {
@@ -209,6 +180,7 @@ input UpdateUserInput {
 
 type User {
   company: Company
+  companyId: String!
 
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
@@ -222,4 +194,9 @@ type User {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
+}
+
+type UserEdge {
+  cursor: String!
+  node: User!
 }

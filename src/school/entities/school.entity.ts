@@ -10,5 +10,8 @@ export class School {
   company: Company;
 
   @Field(() => String)
+  companyId: string;
+
+  @Field(() => String)
   title: string;
 }

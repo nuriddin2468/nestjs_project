@@ -16,9 +16,11 @@ import { PrismaService } from 'nestjs-prisma';
 import { Role } from '@prisma/client';
 import { UpdateCompanyInput } from './dto/update-company.input';
 import { CompanyService } from './company.service';
-import { PaginationInput } from 'src/common/pagination/pagination.input';
-import { School } from 'src/school/entities/school.entity';
 import { Roles, RolesGuard } from 'src/common/guards/roles.guard';
+import { CompanyPaginatedModel } from './models/companyPaginated.model';
+import { PaginationArgs } from 'src/common/pagination/pagination.args';
+import { SchoolPaginatedModel } from 'src/school/entities/schoolPaginated.model';
+import { UserPaginatedModel } from 'src/users/models/userPaginated.model';
 
 @Resolver(() => Company)
 @UseGuards(GqlAuthGuard)
@@ -31,36 +33,30 @@ export class CompanyResolver {
   @Mutation(() => Company)
   @Roles(Role.ADMIN)
   @UseGuards(RolesGuard)
-  createCompany(
-    @UserEntity() user: User,
-    @Args('data') data: CreateCompanyInput
-  ) {
-    return this.prisma.company.create({
-      data: {
-        title: data.title,
-        logo: data.logo,
-      },
-    });
+  createCompany(@Args('data') data: CreateCompanyInput) {
+    return this.companyService.createOne(data);
   }
 
-  @Query(() => [Company])
+  @Query(() => CompanyPaginatedModel)
   @Roles(Role.ADMIN)
   @UseGuards(RolesGuard)
-  fetchCompanies(@UserEntity() user: User) {
-    return this.prisma.company.findMany();
+  async companiesConnection(
+    @Args() pagination: PaginationArgs,
+    @Args({ name: 'query', type: () => String, nullable: true })
+    query: string
+  ) {
+    return this.companyService.fetchCompanies(pagination, query);
   }
 
   @Query(() => Company)
   @Roles(Role.ADMIN, Role.DIRECTOR)
   @UseGuards(RolesGuard)
-  async fetchCompany(
+  company(
     @UserEntity() user: User,
     @Args('companyId', { type: () => String, nullable: true })
     companyId?: string
   ) {
-    if (user.role === Role.ADMIN && !!companyId)
-      return this.prisma.company.findUnique({ where: { id: companyId } });
-    return this.companyService.fetchUserCompany(user);
+    this.companyService.fetchCompany(user, companyId);
   }
 
   @Mutation(() => Company)
@@ -72,18 +68,7 @@ export class CompanyResolver {
     @Args('companyId', { type: () => String, nullable: true })
     companyId?: string
   ) {
-    if (user.role === Role.ADMIN && !!companyId) {
-      return this.prisma.company.update({
-        where: { id: companyId },
-        data: data,
-      });
-    }
-    const company = await this.companyService.fetchUserCompany(user);
-    if (!company) throw Error('User do not have any company');
-    return this.prisma.company.update({
-      where: { id: company.id },
-      data: data,
-    });
+    return this.companyService.updateOne(user, data, companyId);
   }
 
   @Mutation(() => Company)
@@ -98,36 +83,30 @@ export class CompanyResolver {
     });
   }
 
-  @ResolveField('schools', () => [School])
+  @ResolveField('schoolsConnection', () => SchoolPaginatedModel)
   @Roles(Role.ADMIN, Role.DIRECTOR)
   @UseGuards(RolesGuard)
-  schools(@Parent() company: Company) {
-    return this.prisma.school.findMany({
-      where: {
-        companyId: company.id,
-      },
-    });
+  schoolsConnection(
+    @Parent() company: Company,
+    @Args() pagination: PaginationArgs
+  ) {
+    return this.companyService.findSchools(company.id, pagination);
   }
 
-  @ResolveField('users', () => [User])
+  @ResolveField('usersConnection', () => UserPaginatedModel)
   @Roles(Role.ADMIN)
   @UseGuards(RolesGuard)
-  users(
+  usersConnection(
     @Parent() company: Company,
-    @Args('pagination') pagination: PaginationInput
+    @Args() pagination: PaginationArgs
   ) {
-    return this.prisma.user.findMany({
-      cursor: {
-        id: pagination.cursor,
-      },
-      take: pagination.take,
-      where: {
-        school: {
-          company: {
-            id: company.id,
-          },
-        },
-      },
-    });
+    return this.companyService.findUsers(company.id, pagination);
+  }
+
+  @ResolveField('director', () => User)
+  @Roles(Role.ADMIN, Role.DIRECTOR)
+  @UseGuards(RolesGuard)
+  director(@Parent() company: Company) {
+    return this.companyService.findDirector(company.id);
   }
 }

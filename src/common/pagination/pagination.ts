@@ -18,8 +18,8 @@ export default function Paginated<TItem>(TItemClass: Type<TItem>) {
     @Field(() => [EdgeType], { nullable: true })
     edges: Array<EdgeType>;
 
-    // @Field((type) => [TItemClass], { nullable: true })
-    // nodes: Array<TItem>;
+    @Field((type) => [TItemClass], { nullable: true })
+    nodes: Array<TItem>;
 
     @Field(() => PageInfo)
     pageInfo: PageInfo;

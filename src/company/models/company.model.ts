@@ -12,8 +12,11 @@ export class Company extends BaseModel {
   logo: string;
 
   @Field(() => [User])
-  users: User[];
+  usersConnection: User[];
 
   @Field(() => [School])
-  schools: School[];
+  schoolsConnection: School[];
+
+  @Field(() => User, { nullable: true })
+  director: User;
 }

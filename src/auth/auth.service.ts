@@ -1,10 +1,9 @@
 import { PrismaService } from 'nestjs-prisma';
-import { Prisma, Role, User } from '@prisma/client';
+import { Role, User } from '@prisma/client';
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ConflictException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -25,59 +24,50 @@ export class AuthService {
 
   async createUser(
     payload: SignupInput,
-    role: Role = Role.USER
+    role: Role = Role.USER,
+    companyId: string
   ): Promise<Token> {
     const hashedPassword = await this.passwordService.hashPassword(
       payload.password
     );
-    if (role === Role.STUDENT) {
-      const user = await this.prisma.$transaction(async (tx) => {
-        const user = await tx.user.create({
-          data: {
-            ...payload,
-            password: hashedPassword,
-            role,
-            cash: 0,
-          },
-        });
 
-        if (!user) throw Error('Oops, something went wrong');
-
+    const user = await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          ...payload,
+          password: hashedPassword,
+          role,
+          cash: 0,
+          companyId,
+        },
+      });
+      if (role === Role.STUDENT)
         await tx.student.create({
           data: {
-            userId: user.id,
+            user: {
+              connect: {
+                id: user.id,
+              },
+            },
           },
         });
 
-        return user;
-      });
-      return this.generateTokens({
-        userId: user.id,
-      });
-    } else {
-      try {
-        const user = await this.prisma.user.create({
+      if (role === Role.TEACHER)
+        await tx.teacher.create({
           data: {
-            ...payload,
-            password: hashedPassword,
-            role,
-            cash: 0,
+            user: {
+              connect: {
+                id: user.id,
+              },
+            },
           },
         });
 
-        return this.generateTokens({
-          userId: user.id,
-        });
-      } catch (e) {
-        if (
-          e instanceof Prisma.PrismaClientKnownRequestError &&
-          e.code === 'P2002'
-        ) {
-          throw new ConflictException(`Email ${payload.email} already used.`);
-        }
-        throw new Error(e);
-      }
-    }
+      return user;
+    });
+    return this.generateTokens({
+      userId: user.id,
+    });
   }
 
   async login(email: string, password: string): Promise<Token> {

@@ -17,6 +17,8 @@ Table User {
   systemLanguage Language [not null, default: 'RUSSIAN']
   school School
   schoolId String
+  company Company [not null]
+  companyId String [not null]
   studentInfo Student
   teacherInfo Teacher
   cash Float [not null]
@@ -27,14 +29,14 @@ Table User {
 
 Table Student {
   user User [not null]
-  userId String [pk]
+  id String [pk]
   lessonParticipations Lesson [not null]
   enrollments Enrollment [not null]
 }
 
 Table Teacher {
   user User [not null]
-  userId String [pk]
+  id String [pk]
   groups Group [not null]
   lessons Lesson [not null]
 }
@@ -68,6 +70,8 @@ Table Company {
   title String [not null]
   logo String [not null]
   schools School [not null]
+  users User [not null]
+  courses Course [not null]
 }
 
 Table School {
@@ -94,6 +98,8 @@ Table Course {
   duration Int [not null]
   price Float [not null]
   groups Group [not null]
+  company Company [not null]
+  companyId String [not null]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   paymentCalculationSettings PaymentCalculationSetting [not null]
@@ -111,7 +117,7 @@ Table Group {
   teacher Teacher [not null]
   teacherId String [not null]
   lessons Lesson [not null]
-  enrollment Enrollment [not null]
+  enrollments Enrollment [not null]
 }
 
 Table Enrollment {
@@ -211,11 +217,13 @@ Enum HistoryEntity {
   GROUP
 }
 
-Ref: User.schoolId > School.id
+Ref: User.schoolId > School.id [delete: Set Null]
 
-Ref: Student.userId - User.id
+Ref: User.companyId > Company.id [delete: Cascade]
 
-Ref: Teacher.userId - User.id
+Ref: Student.id - User.id [delete: Cascade]
+
+Ref: Teacher.id - User.id [delete: Cascade]
 
 Ref: PaymentCalculationSetting.userId > User.id
 
@@ -225,20 +233,22 @@ Ref: Payment.userId > User.id
 
 Ref: Payment.paymentCalculationSettingId > PaymentCalculationSetting.id
 
-Ref: School.companyId > Company.id
+Ref: School.companyId > Company.id [delete: Cascade]
 
-Ref: Room.schoolId > School.id
+Ref: Room.schoolId > School.id [delete: Cascade]
+
+Ref: Course.companyId > Company.id [delete: Cascade]
 
 Ref: Group.courseId > Course.id
 
 Ref: Group.roomId > Room.id
 
-Ref: Group.teacherId > Teacher.userId
+Ref: Group.teacherId > Teacher.id
 
-Ref: Enrollment.studentId > Student.userId
+Ref: Enrollment.studentId > Student.id
 
 Ref: Enrollment.groupId > Group.id
 
 Ref: Lesson.groupId > Group.id
 
-Ref: Lesson.teacherId > Teacher.userId
+Ref: Lesson.teacherId > Teacher.id
