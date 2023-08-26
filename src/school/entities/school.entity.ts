@@ -1,5 +1,6 @@
 import { ObjectType, Field, Int, ID, HideField } from '@nestjs/graphql';
 import { Company } from 'src/company/models/company.model';
+import Paginated from '../../common/pagination/pagination';
 
 @ObjectType()
 export class School {
@@ -15,3 +16,6 @@ export class School {
   @Field(() => String)
   title: string;
 }
+
+@ObjectType()
+export class SchoolPaginatedModel extends Paginated(School) {}

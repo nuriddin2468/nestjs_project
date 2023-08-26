@@ -7,7 +7,7 @@ import {
   Parent,
 } from '@nestjs/graphql';
 import { SchoolService } from './school.service';
-import { School } from './entities/school.entity';
+import { School, SchoolPaginatedModel } from "./entities/school.entity";
 import { CreateSchoolInput } from './dto/create-school.input';
 import { PrismaService } from 'nestjs-prisma';
 import { UseGuards } from '@nestjs/common';
@@ -15,7 +15,6 @@ import { GqlAuthGuard } from 'src/auth/gql-auth.guard';
 import { UserEntity } from 'src/common/decorators/user.decorator';
 import { Role, User } from '@prisma/client';
 import { Roles, RolesGuard } from 'src/common/guards/roles.guard';
-import { SchoolPaginatedModel } from './entities/schoolPaginated.model';
 import { PaginationArgs } from 'src/common/pagination/pagination.args';
 import { Company } from 'src/company/models/company.model';
 

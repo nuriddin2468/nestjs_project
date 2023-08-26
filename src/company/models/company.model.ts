@@ -1,9 +1,11 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 import { BaseModel } from 'src/common/models/base.model';
-import { School } from 'src/school/entities/school.entity';
-import { User } from 'src/users/models/user.model';
-import { UserPaginatedModel } from '../../users/models/userPaginated.model';
-import { SchoolPaginatedModel } from '../../school/entities/schoolPaginated.model';
+import {
+  School,
+  SchoolPaginatedModel,
+} from 'src/school/entities/school.entity';
+import { User, UserPaginatedModel } from 'src/users/models/user.model';
+import Paginated from '../../common/pagination/pagination';
 
 @ObjectType()
 export class Company extends BaseModel {
@@ -13,12 +15,15 @@ export class Company extends BaseModel {
   @Field(() => String)
   logo: string;
 
-  @Field(() => [User])
-  usersConnection: UserPaginatedModel;
-
   @Field(() => [School])
   schoolsConnection: SchoolPaginatedModel;
 
   @Field(() => User, { nullable: true })
   director: User;
+
+  @Field(() => UserPaginatedModel)
+  usersConnection: UserPaginatedModel;
 }
+
+@ObjectType()
+export class CompanyPaginatedModel extends Paginated(Company) {}

@@ -6,21 +6,19 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
-import { Company } from './models/company.model';
+import { Company, CompanyPaginatedModel } from './models/company.model';
 import { UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from '../auth/gql-auth.guard';
 import { UserEntity } from '../common/decorators/user.decorator';
-import { User } from '../users/models/user.model';
+import { User, UserPaginatedModel } from '../users/models/user.model';
 import { CreateCompanyInput } from './dto/create-company.input';
 import { PrismaService } from 'nestjs-prisma';
 import { Role } from '@prisma/client';
 import { UpdateCompanyInput } from './dto/update-company.input';
 import { CompanyService } from './company.service';
 import { Roles, RolesGuard } from 'src/common/guards/roles.guard';
-import { CompanyPaginatedModel } from './models/companyPaginated.model';
 import { PaginationArgs } from 'src/common/pagination/pagination.args';
-import { SchoolPaginatedModel } from 'src/school/entities/schoolPaginated.model';
-import { UserPaginatedModel } from 'src/users/models/userPaginated.model';
+import { SchoolPaginatedModel } from "../school/entities/school.entity";
 
 @Resolver(() => Company)
 @UseGuards(GqlAuthGuard)

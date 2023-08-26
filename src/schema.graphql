@@ -27,7 +27,7 @@ type Company {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
-  usersConnection(after: String, before: String, first: Int, last: Int, skip: Int): [User!]!
+  usersConnection(after: String, before: String, first: Int, last: Int, skip: Int): UserPaginatedModel!
 }
 
 type CompanyEdge {
@@ -199,4 +199,11 @@ type User {
 type UserEdge {
   cursor: String!
   node: User!
+}
+
+type UserPaginatedModel {
+  edges: [UserEdge!]
+  nodes: [User!]
+  pageInfo: PageInfo!
+  totalCount: Int!
 }
