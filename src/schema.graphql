@@ -100,7 +100,7 @@ type Query {
   school(id: String!): School!
   schoolsConnection(after: String, before: String, first: Int, last: Int, skip: Int): SchoolPaginatedModel!
   studentsConnection(after: String, before: String, first: Int, last: Int, skip: Int): StudentPaginatedModel!
-  usersConnection: [User!]!
+  usersConnection(after: String, before: String, first: Int, last: Int, skip: Int): UserPaginatedModel!
 }
 
 """User role"""
@@ -179,7 +179,7 @@ input UpdateUserInput {
 }
 
 type User {
-  company: Company
+  company: Company!
   companyId: String!
 
   """Identifies the date and time when the object was created."""
@@ -190,7 +190,7 @@ type User {
   lastname: String
   role: Role!
   school: School
-  schoolId: String!
+  schoolId: String
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!

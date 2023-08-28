@@ -5,9 +5,10 @@ import {
   Args,
   ResolveField,
   Parent,
+  Context,
 } from '@nestjs/graphql';
 import { SchoolService } from './school.service';
-import { School, SchoolPaginatedModel } from "./entities/school.entity";
+import { School, SchoolPaginatedModel } from './entities/school.entity';
 import { CreateSchoolInput } from './dto/create-school.input';
 import { PrismaService } from 'nestjs-prisma';
 import { UseGuards } from '@nestjs/common';
@@ -57,11 +58,10 @@ export class SchoolResolver {
   }
 
   @ResolveField('company', () => Company)
-  async company(@Parent() school: School) {
-    return this.prisma.company.findFirstOrThrow({
-      where: {
-        id: school.companyId,
-      },
-    });
+  async company(
+    @Parent() school: School,
+    @Context() { loaders }: IGraphQLContext
+  ) {
+    return loaders.school.company.load(school.companyId);
   }
 }

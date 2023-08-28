@@ -3,7 +3,10 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PasswordService } from 'src/auth/password.service';
 import { ChangePasswordInput } from './dto/change-password.input';
 import { UpdateUserInput } from './dto/update-user.input';
-import { Company } from '@prisma/client';
+import { Company, Role } from '@prisma/client';
+import { User } from './models/user.model';
+import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
+import { PaginationArgs } from '../common/pagination/pagination.args';
 
 @Injectable()
 export class UsersService {
@@ -12,13 +15,21 @@ export class UsersService {
     private passwordService: PasswordService
   ) {}
 
-  updateUser(userId: string, newUserData: UpdateUserInput) {
+  update(userId: string, newUserData: UpdateUserInput) {
     return this.prisma.user.update({
       data: newUserData,
       where: {
         id: userId,
       },
     });
+  }
+
+  findAll(pagination: PaginationArgs) {
+    return findManyCursorConnection(
+      (args) => this.prisma.user.findMany({ ...args }),
+      () => this.prisma.user.count(),
+      pagination
+    );
   }
 
   async getUserCompany(userId: string): Promise<Company | null> {

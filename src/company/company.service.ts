@@ -17,7 +17,7 @@ export class CompanyService {
   constructor(private prisma: PrismaService) {}
 
   findDirector(companyId: string) {
-    this.prisma.user.findFirst({
+    return this.prisma.user.findFirst({
       where: {
         companyId,
         role: Role.DIRECTOR,

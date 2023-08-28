@@ -13,6 +13,8 @@ import { GqlConfigService } from './gql-config.service';
 import { CompanyModule } from './company/company.module';
 import { SchoolModule } from './school/school.module';
 import { StudentModule } from './student/student.module';
+import { DataloaderModule } from './dataloader/dataloader.module';
+import { DataloaderService } from './dataloader/dataloader.service';
 
 @Module({
   imports: [
@@ -33,6 +35,14 @@ import { StudentModule } from './student/student.module';
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
       useClass: GqlConfigService,
+      imports: [DataloaderModule],
+      inject: [DataloaderService],
+      useFactory: (dataloaderService: DataloaderService) => {
+        return {
+          autoSchemaFile: true,
+          context: () => ({ loaders: dataloaderService.createLoaders() }),
+        };
+      },
     }),
     // DataloaderModule,
     AuthModule,
@@ -40,6 +50,7 @@ import { StudentModule } from './student/student.module';
     CompanyModule,
     SchoolModule,
     StudentModule,
+    DataloaderModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],

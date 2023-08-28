@@ -1,5 +1,6 @@
 import {
   Args,
+  Context,
   Mutation,
   Parent,
   Query,
@@ -18,7 +19,7 @@ import { UpdateCompanyInput } from './dto/update-company.input';
 import { CompanyService } from './company.service';
 import { Roles, RolesGuard } from 'src/common/guards/roles.guard';
 import { PaginationArgs } from 'src/common/pagination/pagination.args';
-import { SchoolPaginatedModel } from "../school/entities/school.entity";
+import { SchoolPaginatedModel } from '../school/entities/school.entity';
 
 @Resolver(() => Company)
 @UseGuards(GqlAuthGuard)
@@ -104,7 +105,10 @@ export class CompanyResolver {
   @ResolveField('director', () => User)
   @Roles(Role.ADMIN, Role.DIRECTOR)
   @UseGuards(RolesGuard)
-  director(@Parent() company: Company) {
-    return this.companyService.findDirector(company.id);
+  director(
+    @Parent() company: Company,
+    @Context() { loaders }: IGraphQLContext
+  ) {
+    return loaders.company.director.load(company.id);
   }
 }

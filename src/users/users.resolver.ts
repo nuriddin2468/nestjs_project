@@ -11,11 +11,13 @@ import { UseGuards } from '@nestjs/common';
 import { UserEntity } from 'src/common/decorators/user.decorator';
 import { GqlAuthGuard } from 'src/auth/gql-auth.guard';
 import { UsersService } from './users.service';
-import { User as UserModel } from './models/user.model';
+import { User as UserModel, UserPaginatedModel } from './models/user.model';
 import { ChangePasswordInput } from './dto/change-password.input';
 import { UpdateUserInput } from './dto/update-user.input';
 import { AdminGuard } from 'src/auth/admin.guard';
-import { Role, User } from '@prisma/client';
+import { Role } from '@prisma/client';
+import { PaginationArgs } from '../common/pagination/pagination.args';
+import { Roles } from '../common/guards/roles.guard';
 
 @Resolver(() => UserModel)
 @UseGuards(GqlAuthGuard)
@@ -30,46 +32,27 @@ export class UsersResolver {
     return user;
   }
 
-  @Query(() => [UserModel])
-  @UseGuards(GqlAuthGuard, AdminGuard)
-  async usersConnection(@UserEntity() user: UserModel): Promise<User[]> {
-    if (user.role === Role.ADMIN) {
-      return this.prisma.user.findMany();
-    }
-    const res = await this.prisma.school.findUnique({
-      where: {
-        id: user.schoolId,
-      },
-      include: {
-        company: {
-          include: {
-            schools: {
-              include: {
-                users: true,
-              },
-            },
-          },
-        },
-      },
-    });
-    const users: User[] = [];
-    res?.company.schools.forEach((school) => {
-      school.users.forEach((u) => users.push(u));
-    });
-    return users;
+  @Query(() => UserPaginatedModel)
+  @Roles(Role.ADMIN)
+  @UseGuards(AdminGuard)
+  async usersConnection(
+    @UserEntity() user: UserModel,
+    @Args() pagination: PaginationArgs
+  ) {
+    return this.usersService.findAll(pagination);
   }
 
   @Mutation(() => UserModel)
-  @UseGuards(GqlAuthGuard, AdminGuard)
+  @UseGuards(AdminGuard)
   async updateUser(
     @UserEntity() user: UserModel,
     @Args('data') newUserData: UpdateUserInput
   ) {
-    return this.usersService.updateUser(user.id, newUserData);
+    return this.usersService.update(user.id, newUserData);
   }
 
   @Mutation(() => UserModel)
-  @UseGuards(GqlAuthGuard, AdminGuard)
+  @UseGuards(AdminGuard)
   async updatePassword(
     @UserEntity() user: UserModel,
     @Args('data') changePassword: ChangePasswordInput

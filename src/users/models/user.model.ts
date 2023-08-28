@@ -10,7 +10,7 @@ import { BaseModel } from 'src/common/models/base.model';
 import { Role } from '@prisma/client';
 import { Company } from '../../company/models/company.model';
 import { School } from 'src/school/entities/school.entity';
-import Paginated from "../../common/pagination/pagination";
+import Paginated from '../../common/pagination/pagination';
 
 registerEnumType(Role, {
   name: 'Role',
@@ -35,11 +35,11 @@ export class User extends BaseModel {
   @Field(() => String)
   companyId: string;
 
-  @Field(() => Company, { nullable: true })
-  company?: Company;
+  @Field(() => Company)
+  company: Company;
 
-  @Field(() => String)
-  schoolId: string;
+  @Field(() => String, { nullable: true })
+  schoolId?: string;
 
   @Field(() => School, { nullable: true })
   school?: School;
@@ -47,7 +47,6 @@ export class User extends BaseModel {
   @HideField()
   password: string;
 }
-
 
 @ObjectType()
 export class UserPaginatedModel extends Paginated<User>(User) {}
